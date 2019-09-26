@@ -1,8 +1,30 @@
 const TX_POWER_LVL = 4;
 const BLE_ADVERTISE_INTERVAL_MS = 600;
-const DEVICE_NAME = "TempSens";
+const DEVICE_NAME = "THS";
 const DATA_REPORT_INTERVAL_MS = 30000;
 
+
+function encodeFloat(num, precision) {
+  var d = Math.round(num.toFixed(precision) * 100);
+  return [ d & 255, d >> 8 ];
+}
+
+function sendData(sensor) {
+  var batteryLvl = E.clip(Math.round((NRF.getBattery()/3.0) * 100), 0, 100);
+  var temperature = sensor.readTemperature();
+  var humdity = sensor.getCompensatedHumidity(sensor.readHumidity(), temperature);
+
+
+  NRF.setAdvertising({
+      0x180F: batteryLvl,
+      0x2A6E: encodeFloat(temperature, 1), // ble cannot advertise floats directly (must be "endcoded" in an array)
+      0x2A6F: encodeFloat(humdity, 1) // ble cannot advertise floats directly (must be "endcoded" in an array)
+    },
+    {
+      name: DEVICE_NAME,
+      interval: BLE_ADVERTISE_INTERVAL_MS
+  });
+}
 
 function onInit() {
   I2C1.setup({
@@ -14,20 +36,10 @@ function onInit() {
 
   NRF.setTxPower(TX_POWER_LVL);
 
+  sendData(htu); // advertise initial readings at start up
 
+  // advertise readings periodically
   setInterval(function() {
-    var batteryLvl = E.clip(Math.round((NRF.getBattery()/3.0) * 100), 0, 100);
-    var temperature = htu.readTemperature();
-    var humidity = htu.readHumidity();
-
-    NRF.setAdvertising({
-        0x180F: batteryLvl,
-        0x2A6E: temperature,
-        0x2A6F: humidity
-      },
-      {
-        name: DEVICE_NAME,
-        interval: BLE_ADVERTISE_INTERVAL_MS
-     });
+    sendData(htu);
   }, DATA_REPORT_INTERVAL_MS);
 }
