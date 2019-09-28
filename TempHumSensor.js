@@ -3,6 +3,8 @@ const BLE_ADVERTISE_INTERVAL_MS = 600;
 const DEVICE_NAME = "THS";
 const DATA_REPORT_INTERVAL_MS = 30000;
 
+var isConnectable = true;
+var isScannable = true;
 
 function encodeFloat(num, precision) {
   var d = Math.round(num.toFixed(precision) * 100);
@@ -22,7 +24,9 @@ function sendData(sensor) {
     },
     {
       name: DEVICE_NAME,
-      interval: BLE_ADVERTISE_INTERVAL_MS
+      interval: BLE_ADVERTISE_INTERVAL_MS,
+      connectable: isConnectable,
+      scannable: isScannable
   });
 }
 
@@ -35,6 +39,13 @@ function onInit() {
   htu.setResolution(htu.RH_8_BITS_TEMP_12_BITS);
 
   NRF.setTxPower(TX_POWER_LVL);
+
+  // disable uart service and connectivity after one minute
+  setTimeout(function() {
+    NRF.setServices({}, {uart: false});
+    isConnectable = false;
+    isScannable = false;
+  }, 60000);
 
   sendData(htu); // advertise initial readings at start up
 
