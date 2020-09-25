@@ -1,6 +1,7 @@
 const DEVICE_NAME = 'Key_Finder';
 const ADVERTISING_INTERVAL_MS = 320;
 const TX_POWER_LVL_DB = 4;
+const BLE_CONNECTION_INTERVAL_MS = 750;
 const BATTERY_UPDATE_INTERVAL_MS = 60000;
 const UART_DISABLE_TIMEOUT_MS = 120000;
 
@@ -48,6 +49,9 @@ function triggerAlarm(triggerLevel) {
 }
 
 function setBluetoothStuff() {
+  NRF.setTxPower(TX_POWER_LVL_DB);
+  NRF.setConnectionInterval(BLE_CONNECTION_INTERVAL_MS);
+
   // advertising
   NRF.setAdvertising({}, {
       name: DEVICE_NAME,
@@ -70,8 +74,6 @@ function setBluetoothStuff() {
 }
 
 function onInit() {
-  NRF.setTxPower(TX_POWER_LVL_DB);
-
   setBluetoothStuff();
 
   // disable the BLE UART console after a while
